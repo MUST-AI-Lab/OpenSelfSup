@@ -3,14 +3,11 @@ _base_ = '../../../base.py'
 model = dict(
     type='Classification',
     pretrained=None,
-    with_sobel=True,
     backbone=dict(
         type='ResNet',
         depth=50,
-        in_channels=2,
         out_indices=[4],  # 0: conv-1, x: stage-x
-        norm_cfg=dict(type='BN'),
-        frozen_stages=4),
+        norm_cfg=dict(type='SyncBN')),
     head=dict(
         type='ClsHead', with_avg_pool=True, in_channels=2048,
         num_classes=1000))
@@ -19,7 +16,7 @@ data_source_cfg = dict(
     type='ImageNet',
     memcached=True,
     mclient_path='/mnt/lustre/share/memcached_client')
-data_train_list = 'data/imagenet/meta/train_labeled.txt'
+data_train_list = 'data/imagenet/meta/train_labeled_1percent.txt'
 data_train_root = 'data/imagenet/train'
 data_test_list = 'data/imagenet/meta/val_labeled.txt'
 data_test_root = 'data/imagenet/val'
@@ -38,8 +35,8 @@ test_pipeline = [
     dict(type='Normalize', **img_norm_cfg),
 ]
 data = dict(
-    imgs_per_gpu=256,  # total 256
-    workers_per_gpu=5,
+    imgs_per_gpu=64,  # total 256
+    workers_per_gpu=2,
     train=dict(
         type=dataset_type,
         data_source=dict(
@@ -56,16 +53,20 @@ custom_hooks = [
     dict(
         type='ValidateHook',
         dataset=data['val'],
-        initial=True,
-        interval=1,
-        imgs_per_gpu=128,
-        workers_per_gpu=4,
+        initial=False,
+        interval=20,
+        imgs_per_gpu=32,
+        workers_per_gpu=2,
         eval_param=dict(topk=(1, 5)))
 ]
-# optimizer
-optimizer = dict(type='SGD', lr=30., momentum=0.9, weight_decay=0.)
 # learning policy
-lr_config = dict(policy='step', step=[60, 80])
-checkpoint_config = dict(interval=10)
+lr_config = dict(policy='step', step=[12, 16], gamma=0.2)
+checkpoint_config = dict(interval=20)
+log_config = dict(
+    interval=10,
+    hooks=[
+        dict(type='TextLoggerHook'),
+        dict(type='TensorboardLoggerHook')
+    ])
 # runtime settings
-total_epochs = 100
+total_epochs = 20
