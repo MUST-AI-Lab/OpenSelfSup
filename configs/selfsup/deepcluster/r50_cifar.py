@@ -1,6 +1,7 @@
 _base_ = '../../base.py'
 # Model settings
-num_classes = 10000
+num_classes = 10
+# num_classes = 10000
 model = dict(
     type='DeepCluster',
     pretrained=None,
@@ -69,7 +70,7 @@ custom_hooks = [
                 data_source=dict(
                     # list_file=data_train_list,
                     # root=data_train_root,
-                    split='test',
+                    split='train',
                     **data_source_cfg),
                 pipeline=extract_pipeline)),
         clustering=dict(type='Kmeans', k=num_classes, pca_dim=256),
