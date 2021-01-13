@@ -2,7 +2,12 @@
 # OpenSelfSup
 
 **News**
-OpenSelfSup now supports [BYOL](https://arxiv.org/pdf/2006.07733.pdf)!
+* Downstream tasks now support more methods(Mask RCNN-FPN, RetinaNet, Keypoints RCNN) and more datasets(Cityscapes).
+* 'GaussianBlur' is replaced from Opencv to PIL, and MoCo v2 training speed doubles!    
+(time/iter 0.35s-->0.16s, SimCLR and BYOL are also affected.)
+* OpenSelfSup now supports [Mixed Precision Training (apex AMP)](https://github.com/NVIDIA/apex)!
+* A bug of MoCo v2 has been fixed and now the results are reproducible.
+* OpenSelfSup now supports [BYOL](https://arxiv.org/pdf/2006.07733.pdf)!
 
 ## Introduction
 
@@ -21,7 +26,19 @@ Below is the relations among Unsupervised Learning, Self-Supervised Learning and
 - **All methods in one repository**
 
   <em>For comprehensive comparison in all benchmarks, refer to [MODEL_ZOO.md](docs/MODEL_ZOO.md). Most of the selfsup pretraining methods are under the `batch_size=256, epochs=200` setting.</em>
-  <table><thead><tr><th>Method</th><th>VOC07 SVM (best layer)</th><th>ImageNet (best layer)</th></tr></thead><tbody><tr><td><a href="https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py" target="_blank" rel="noopener noreferrer">ImageNet</a></td><td>87.17</td><td>76.17</td></tr><tr><td>Random</td><td>30.54</td><td>16.21</td></tr><tr><td><a href="https://www.cv-foundation.org/openaccess/content_iccv_2015/papers/Doersch_Unsupervised_Visual_Representation_ICCV_2015_paper.pdf" target="_blank" rel="noopener noreferrer">Relative-Loc</a></td><td>64.78</td><td>49.31</td></tr><tr><td><a href="https://arxiv.org/abs/1803.07728" target="_blank" rel="noopener noreferrer">Rotation-Pred</a></td><td>67.38</td><td>54.99</td></tr><tr><td><a href="https://arxiv.org/abs/1807.05520" target="_blank" rel="noopener noreferrer">DeepCluster</a></td><td>74.26</td><td>57.71</td></tr><tr><td><a href="https://arxiv.org/abs/1805.01978" target="_blank" rel="noopener noreferrer">NPID</a></td><td>74.50</td><td>56.61</td></tr><tr><td><a href="http://openaccess.thecvf.com/content_CVPR_2020/papers/Zhan_Online_Deep_Clustering_for_Unsupervised_Representation_Learning_CVPR_2020_paper.pdf" target="_blank" rel="noopener noreferrer">ODC</a></td><td>78.42</td><td>57.70</td></tr><tr><td><a href="https://arxiv.org/abs/1911.05722" target="_blank" rel="noopener noreferrer">MoCo</a></td><td>79.18</td><td>60.60</td></tr><tr><td><a href="https://arxiv.org/abs/2003.04297" target="_blank" rel="noopener noreferrer">MoCo v2</a></td><td>84.05</td><td>66.72</td></tr><tr><td><a href="https://arxiv.org/abs/2002.05709" target="_blank" rel="noopener noreferrer">SimCLR</a></td><td>78.95</td><td>61.57</td></tr><tr><td><a href="https://arxiv.org/abs/2006.07733" target="_blank" rel="noopener noreferrer">BYOL (bs4096)</a></td><td>85.10</td><td>69.14</td></tr></tbody></table>
+  <table><thead><tr><th>Method</th><th>VOC07 SVM (best layer)</th><th>ImageNet (best layer)</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py" target="_blank" rel="noopener noreferrer">ImageNet</a></td><td>87.17</td><td>76.17</td></tr>
+<tr><td>Random</td><td>30.54</td><td>16.21</td></tr>
+<tr><td><a href="https://www.cv-foundation.org/openaccess/content_iccv_2015/papers/Doersch_Unsupervised_Visual_Representation_ICCV_2015_paper.pdf" target="_blank" rel="noopener noreferrer">Relative-Loc</a></td><td>64.78</td><td>49.31</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1803.07728" target="_blank" rel="noopener noreferrer">Rotation-Pred</a></td><td>67.38</td><td>54.99</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1807.05520" target="_blank" rel="noopener noreferrer">DeepCluster</a></td><td>74.26</td><td>57.71</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1805.01978" target="_blank" rel="noopener noreferrer">NPID</a></td><td>74.50</td><td>56.61</td></tr>
+<tr><td><a href="http://openaccess.thecvf.com/content_CVPR_2020/papers/Zhan_Online_Deep_Clustering_for_Unsupervised_Representation_Learning_CVPR_2020_paper.pdf" target="_blank" rel="noopener noreferrer">ODC</a></td><td>78.42</td><td>57.70</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1911.05722" target="_blank" rel="noopener noreferrer">MoCo</a></td><td>79.18</td><td>60.60</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2003.04297" target="_blank" rel="noopener noreferrer">MoCo v2</a></td><td>84.26</td><td>67.69</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2002.05709" target="_blank" rel="noopener noreferrer">SimCLR</a></td><td>78.95</td><td>61.57</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2006.07733" target="_blank" rel="noopener noreferrer">BYOL (epoch=300)</a></td><td>86.58</td><td>72.35</td></tr>
+</tbody></table>
 
 - **Flexibility & Extensibility**
 
@@ -52,6 +69,8 @@ Below is the relations among Unsupervised Learning, Self-Supervised Learning and
 
 Please refer to [CHANGELOG.md](docs/CHANGELOG.md) for details and release history.
 
+[2020-10-14] `OpenSelfSup` v0.3.0 is released with some bugs fixed and support of new features.
+
 [2020-06-26] `OpenSelfSup` v0.2.0 is released with benchmark results and support of new features.
 
 [2020-06-16] `OpenSelfSup` v0.1.0 is released.
@@ -72,6 +91,7 @@ Please refer to [MODEL_ZOO.md](docs/MODEL_ZOO.md) for for a comprehensive set of
 
 This project is released under the [Apache 2.0 license](LICENSE).
 
+
 ## Acknowledgement
 
 - This repo borrows the architecture design and part of the code from [MMDetection](https://github.com/open-mmlab/mmdetection).
@@ -80,6 +100,10 @@ This project is released under the [Apache 2.0 license](LICENSE).
 fair_self_supervision_benchmark](https://github.com/facebookresearch/fair_self_supervision_benchmark).
 - `openselfsup/third_party/clustering.py` is borrowed from [deepcluster](https://github.com/facebookresearch/deepcluster/blob/master/clustering.py).
 
+## Contributors
+
+We encourage researchers interested in Self-Supervised Learning to contribute to OpenSelfSup. Your contributions, including implementing or transferring new methods to OpenSelfSup, performing experiments, reproducing of results, parameter studies, etc, will be recorded in [MODEL_ZOO.md](docs/MODEL_ZOO.md). For now, the contributors include: Xiaohang Zhan ([@XiaohangZhan](http://github.com/XiaohangZhan)), Jiahao Xie ([@Jiahao000](https://github.com/Jiahao000)), Enze Xie ([@xieenze](https://github.com/xieenze)), Xiangxiang Chu ([@cxxgtxy](https://github.com/cxxgtxy)), Zijian He ([@scnuhealthy](https://github.com/scnuhealthy)).
+
 ## Contact
 
-This repo is currently maintained by Xiaohang Zhan ([@XiaohangZhan](http://github.com/XiaohangZhan)) and Jiahao Xie ([@Jiahao000](https://github.com/Jiahao000)).
+This repo is currently maintained by Xiaohang Zhan ([@XiaohangZhan](http://github.com/XiaohangZhan)), Jiahao Xie ([@Jiahao000](https://github.com/Jiahao000)) and Enze Xie ([@xieenze](https://github.com/xieenze)).

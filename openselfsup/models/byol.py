@@ -15,9 +15,10 @@ class BYOL(nn.Module):
     Self-Supervised Learning (https://arxiv.org/abs/2006.07733)".
 
     Args:
-        backbone (nn.Module): Module of backbone ConvNet.
-        neck (nn.Module): Module of deep features to compact feature vectors.
-        head (nn.Module): Module of loss functions.
+        backbone (dict): Config dict for module of backbone ConvNet.
+        neck (dict): Config dict for module of deep features to compact feature vectors.
+            Default: None.
+        head (dict): Config dict for module of loss functions. Default: None.
         pretrained (str, optional): Path to pre-trained weights. Default: None.
         base_momentum (float): The base momentum coefficient for the target network.
             Default: 0.996.
@@ -69,6 +70,10 @@ class BYOL(nn.Module):
             param_tgt.data = param_tgt.data * self.momentum + \
                              param_ol.data * (1. - self.momentum)
 
+    @torch.no_grad()
+    def momentum_update(self):
+        self._momentum_update()
+
     def forward_train(self, img, **kwargs):
         """Forward computation during training.
 
@@ -92,7 +97,6 @@ class BYOL(nn.Module):
 
         loss = self.head(proj_online_v1, proj_target_v2)['loss'] + \
                self.head(proj_online_v2, proj_target_v1)['loss']
-        self._momentum_update()
         return dict(loss=loss)
 
     def forward_test(self, img, **kwargs):

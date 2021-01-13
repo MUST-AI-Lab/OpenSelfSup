@@ -38,6 +38,12 @@ An example:
 SRUN_ARGS="-w xx.xx.xx.xx" bash tools/srun_train.sh Dummy configs/selfsup/odc/r50_v1.py 8 --resume_from work_dirs/selfsup/odc/r50_v1/epoch_100.pth
 ```
 
+### Train with multiple machines
+
+If you launch with multiple machines simply connected with ethernet, you have to modify `tools/dist_train.sh` or create a new script, please refer to PyTorch [Launch utility](https://pytorch.org/docs/stable/distributed.html#launch-utility). Usually it is slow if you do not have high speed networking like InfiniBand.
+
+If you launch with slurm, the command is the same as that on single machine described above. You only need to change ${GPUS}, e.g., to 16 for two 8-GPU machines.
+
 ### Launch multiple jobs on a single machine
 
 If you launch multiple jobs on a single machine, e.g., 2 jobs of 4-GPU training on a machine with 8 GPUs,
@@ -63,6 +69,32 @@ Assuming that you only have 1 GPU that can contain 64 images in a batch, while y
 optimizer_config = dict(update_interval=4)
 ```
 
+### Mixed Precision Training (Optional)
+We use [Apex](https://github.com/NVIDIA/apex) to implement Mixed Precision Training. 
+If you want to use Mixed Precision Training, you can add below in the config file.
+```python
+use_fp16 = True
+optimizer_config = dict(use_fp16=use_fp16)
+```
+An example:
+```python
+bash tools/dist_train.sh configs/selfsup/moco/r50_v1_fp16.py 8
+```
+
+### Speeding Up IO (Optional)
+1 . Prefetching data helps to speeding up IO and make better use of CUDA stream parallelization. 
+If you want to use it, you can activate it in the config file (disabled by default).
+```python
+prefetch = True
+```
+2 . Costly operation ToTensor is reimplemented along with prefetch.
+
+3 . Replacing  Pillow with Pillow-SIMD (https://github.com/uploadcare/pillow-simd.git) to make use of SIMD command sets with modern CPU.
+ ```shell
+pip uninstall pillow
+pip install Pillow-SIMD or CC="cc -mavx2" pip install -U --force-reinstall pillow-simd if AVX2 is available.
+```
+We test it using MoCoV2 using a total batch size of 256 on Tesla V100. The training time per step is decreased to 0.17s from 0.23s.
 ## Benchmarks
 
 We provide several standard benchmarks to evaluate representation learning. The config files or scripts for evaluation mentioned below are NOT recommended to be changed if you want to use this repo in your publications. We hope that all methods are under a fair comparison.
