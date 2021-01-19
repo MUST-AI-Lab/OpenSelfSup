@@ -16,7 +16,7 @@ class ContrastiveDataset(BaseDataset):
         super(ContrastiveDataset, self).__init__(data_source, pipeline, prefetch)
 
     def __getitem__(self, idx):
-        img = self.data_source.get_sample(idx)[0]
+        img = self.data_source.get_sample(idx)
         assert isinstance(img, Image.Image), \
             'The output from the data source must be an Image, got: {}. \
             Please ensure that the list file does not contain labels.'.format(

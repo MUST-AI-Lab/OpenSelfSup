@@ -46,45 +46,22 @@ train_pipeline = [ ## SimCLR train_pipeline
         ],
         p=0.5),
 ]
-test_pipeline = [ ## classification test_pipeline
-    dict(type='ToTensor'),
-    dict(type='Normalize', **img_norm_cfg),
-]
 
 # prefetch
 prefetch = False
 if not prefetch:
     train_pipeline.extend([dict(type='ToTensor'), dict(type='Normalize', **img_norm_cfg)])
 
-data = dict( ## classification data with val & test
-    imgs_per_gpu=128,
-    workers_per_gpu=2,
-    train=dict( ## SimCLR style training with prefetch
+data = dict( ## SimCLR data without val & test
+    imgs_per_gpu=32,  # total 32*8
+    workers_per_gpu=4,
+    train=dict(
         type=dataset_type,
         data_source=dict(
             split='train', **data_source_cfg),
         pipeline=train_pipeline,
         prefetch=prefetch,
-    ),
-    val=dict(
-        type=dataset_type,
-        data_source=dict(split='test', **data_source_cfg),
-        pipeline=test_pipeline),
-    test=dict(
-        type=dataset_type,
-        data_source=dict(split='test', **data_source_cfg),
-        pipeline=test_pipeline))
-# additional hooks
-custom_hooks = [ ## classification custom_hooks
-    dict(
-        type='ValidateHook',
-        dataset=data['val'],
-        initial=True,
-        interval=10,
-        imgs_per_gpu=128,
-        workers_per_gpu=8,
-        eval_param=dict(topk=(1, 5)))
-]
+    ),)
 # optimizer
 optimizer = dict( ## SimCLR optimizer
     type='LARS',
