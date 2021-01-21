@@ -58,10 +58,11 @@ data = dict( ## SimCLR data without val & test
     train=dict(
         type=dataset_type,
         data_source=dict(
-            split='train', **data_source_cfg),
+            split='train',
+            **data_source_cfg),
         pipeline=train_pipeline,
         prefetch=prefetch,
-    ),)
+    )) ## need extra benchmark
 # optimizer
 optimizer = dict( ## SimCLR optimizer
     type='LARS',
