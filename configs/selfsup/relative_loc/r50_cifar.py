@@ -1,5 +1,5 @@
 _base_ = '../../base.py'
-# Model settings
+# model settings
 model = dict(
     type='RelativeLoc',
     pretrained=None,
@@ -19,16 +19,8 @@ model = dict(
         with_avg_pool=False,
         in_channels=4096,
         num_classes=8))
-# Dataset settings
-data_source_cfg = dict(type='Cifar10', root='data')
-# data_source_cfg = dict(
-#     type='ImageNet',
-#     memcached=True,
-#     mclient_path='/mnt/lustre/share/memcached_client')
-# data_train_list = 'data/imagenet/meta/train.txt'
-# data_train_root = 'data/imagenet/train'
-# data_test_list = 'data/imagenet/meta/val.txt'
-# data_test_root = 'data/imagenet/val'
+# dataset settings
+data_source_cfg = dict(type='Cifar10', root='data') ## classification data_source_cfg
 dataset_type = 'RelativeLocDataset'
 img_norm_cfg = dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 train_pipeline = [
@@ -50,7 +42,6 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_source=dict(
-            # list_file=data_train_list, root=data_train_root,
             split='train',
             **data_source_cfg),
         pipeline=train_pipeline,
@@ -58,19 +49,18 @@ data = dict(
     val=dict(
         type=dataset_type,
         data_source=dict(
-            # list_file=data_test_list, root=data_test_root,
             split='test',
             **data_source_cfg),
         pipeline=test_pipeline,
         format_pipeline=format_pipeline))
-# Optimizer
+# optimizer
 optimizer = dict(
     type='SGD', lr=0.2, momentum=0.9, weight_decay=0.0001,
     nesterov=False,
     paramwise_options={
-        '\Aneck.': dict(weight_decay=0.0005),
-        '\Ahead.': dict(weight_decay=0.0005)})
-# Learning policy
+        r'\Aneck.': dict(weight_decay=0.0005),
+        r'\Ahead.': dict(weight_decay=0.0005)})
+# learning policy
 lr_config = dict(
     policy='step',
     step=[30, 50],
@@ -79,5 +69,5 @@ lr_config = dict(
     warmup_ratio=0.1,
     warmup_by_epoch=True)
 checkpoint_config = dict(interval=10)
-# Runtime settings
+# runtime settings
 total_epochs = 70
