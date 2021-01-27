@@ -27,9 +27,13 @@ class BYOLDataset(Dataset):
         return self.data_source.get_length()
 
     def __getitem__(self, idx):
-        img = self.data_source.get_sample(idx)
-        img1 = self.pipeline1(img[0])
-        img2 = self.pipeline2(img[0])
+        img = self.data_source.get_sample(idx)[0]
+        img1 = self.pipeline1(img)
+        img2 = self.pipeline2(img)
+        if self.prefetch:
+            img1 = torch.from_numpy(to_numpy(img1))
+            img2 = torch.from_numpy(to_numpy(img2))
+
         img_cat = torch.cat((img1.unsqueeze(0), img2.unsqueeze(0)), dim=0)
         return dict(img=img_cat)
 
