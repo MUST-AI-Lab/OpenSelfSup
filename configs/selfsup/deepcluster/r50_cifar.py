@@ -1,7 +1,6 @@
 _base_ = '../../base.py'
-# Model settings
-num_classes = 10
-# num_classes = 10000
+# model settings
+num_classes = 10000
 model = dict(
     type='DeepCluster',
     pretrained=None,
@@ -18,14 +17,8 @@ model = dict(
         with_avg_pool=False,  # already has avgpool in the neck
         in_channels=2048,
         num_classes=num_classes))
-# Dataset settings
-data_source_cfg = dict(type='Cifar10', root='data')
-# data_source_cfg = dict(
-#     type='ImageNet',
-#     memcached=True,
-#     mclient_path='/mnt/lustre/share/memcached_client')
-# data_train_list = 'data/imagenet/meta/train.txt'
-# data_train_root = 'data/imagenet/train'
+# dataset settings
+data_source_cfg = dict(type='Cifar10', root='data') ## classification data_source_cfg
 dataset_type = 'DeepClusterDataset'
 img_norm_cfg = dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 train_pipeline = [
@@ -54,11 +47,10 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_source=dict(
-            # list_file=data_train_list, root=data_train_root,
             split='train',
             **data_source_cfg),
         pipeline=train_pipeline))
-# Additional hooks
+# additional hooks
 custom_hooks = [
     dict(
         type='DeepClusterHook',
@@ -68,8 +60,6 @@ custom_hooks = [
             dataset=dict(
                 type=dataset_type,
                 data_source=dict(
-                    # list_file=data_train_list,
-                    # root=data_train_root,
                     split='train',
                     **data_source_cfg),
                 pipeline=extract_pipeline)),
@@ -80,13 +70,13 @@ custom_hooks = [
         initial=True,  # call initially
         interval=1)
 ]
-# Optimizer
+# optimizer
 optimizer = dict(
     type='SGD', lr=0.1, momentum=0.9, weight_decay=0.00001,
     nesterov=False,
     paramwise_options={'\Ahead.': dict(momentum=0.)})
-# Learning policy
+# learning policy
 lr_config = dict(policy='step', step=[400])
 checkpoint_config = dict(interval=10)
-# Runtime settings
+# runtime settings
 total_epochs = 200
