@@ -74,7 +74,7 @@ custom_hooks = [
 optimizer = dict(
     type='SGD', lr=0.1, momentum=0.9, weight_decay=0.00001,
     nesterov=False,
-    paramwise_options={'\Ahead.': dict(momentum=0.)})
+    paramwise_options={r'\Ahead.': dict(momentum=0.)})
 # learning policy
 lr_config = dict(policy='step', step=[400])
 checkpoint_config = dict(interval=10)
