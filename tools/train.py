@@ -19,7 +19,10 @@ from openselfsup.utils import collect_env, get_root_logger, traverse_replace
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a model')
-    parser.add_argument('config', help='train config file path')
+    parser.add_argument(
+        'config',
+        help='train config file path')  ## positional argument, required
+    ## optional arguments will be identified by the `-` prefix
     parser.add_argument(
         '--work_dir',
         type=str,
@@ -46,7 +49,10 @@ def parse_args():
         default='none',
         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
-    parser.add_argument('--port', type=int, default=29500,
+    parser.add_argument(
+        '--port',
+        type=int,
+        default=29500,
         help='port only works when launcher=="slurm"')
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
@@ -54,11 +60,11 @@ def parse_args():
 
     return args
 
-
+## load runtime variables, add some utils, extract model and datasets from config, then train
 def main():
     args = parse_args()
 
-    cfg = Config.fromfile(args.config)
+    cfg = Config.fromfile(args.config)  ## config dict
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
@@ -67,7 +73,7 @@ def main():
         cfg.work_dir = args.work_dir
     if args.resume_from is not None:
         cfg.resume_from = args.resume_from
-    cfg.gpus = args.gpus
+    cfg.gpus = args.gpus  ## save gpu numbers in `cfg`
 
     # check memcached package exists
     if importlib.util.find_spec('mc') is None:
@@ -75,11 +81,13 @@ def main():
 
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
+        ## run `train.py` by python directly
         distributed = False
         assert cfg.model.type not in \
             ['DeepCluster', 'MOCO', 'SimCLR', 'ODC', 'NPID'], \
             "{} does not support non-dist training.".format(cfg.model.type)
     else:
+        ## `pytorch` is the launcher of `tools/dist_train.sh` 
         distributed = True
         if args.launcher == 'slurm':
             cfg.dist_params['port'] = args.port
@@ -119,8 +127,12 @@ def main():
     if args.pretrained is not None:
         assert isinstance(args.pretrained, str)
         cfg.model.pretrained = args.pretrained
+    ## build_model => build => build_from_cfg => obj_cls(model_cfg)
+    ## `obj_cls` will construct correspondent model class
     model = build_model(cfg.model)
 
+    ## build_dataset => build_from_cfg
+    ## dataset: dict, datasets: [dataset]
     datasets = [build_dataset(cfg.data.train)]
     assert len(cfg.workflow) == 1, "Validation is called by hook."
     if cfg.checkpoint_config is not None:
