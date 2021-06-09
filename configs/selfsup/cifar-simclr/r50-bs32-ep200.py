@@ -23,7 +23,9 @@ model = dict(
 # dataset settings
 data_source_cfg = dict(type="Cifar10", root="data")
 dataset_type = "ContrastiveDataset"
-img_norm_cfg = dict(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.201]) # distribution of cifar10
+img_norm_cfg = dict(
+    mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.201]
+)  # distribution of cifar10
 train_pipeline = [
     dict(type="RandomResizedCrop", size=224),
     dict(type="RandomHorizontalFlip"),
@@ -49,7 +51,7 @@ train_pipeline = [
 ]
 
 # prefetch
-prefetch = True # speeding up IO, disabled by default
+prefetch = True  # speeding up IO, disabled by default
 if not prefetch:
     train_pipeline.extend(
         [dict(type="ToTensor"), dict(type="Normalize", **img_norm_cfg)]
@@ -67,14 +69,14 @@ data = dict(
 )
 # optimizer
 optimizer = dict(
-    type="SGD", # use SGD if the batch size is small
-    lr=0.3 / 8, # new_lr = old_lr * new_ngpus / old_ngpus
-    weight_decay=0.000001,
+    type="SGD",  # use SGD if the batch size is small
+    lr=0.1,  # new_lr = old_lr * new_ngpus / 8
+    weight_decay=0.0005,
     momentum=0.9,
-    paramwise_options={
-        r"(bn|gn)(\d+)?.(weight|bias)": dict(weight_decay=0.0, lars_exclude=True),
-        "bias": dict(weight_decay=0.0, lars_exclude=True),
-    },
+    # paramwise_options={
+    #     r"(bn|gn)(\d+)?.(weight|bias)": dict(weight_decay=0.0, lars_exclude=True),
+    #     "bias": dict(weight_decay=0.0, lars_exclude=True),
+    # },
 )
 # learning policy
 lr_config = dict(
