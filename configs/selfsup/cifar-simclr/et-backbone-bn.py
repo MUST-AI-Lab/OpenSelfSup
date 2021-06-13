@@ -8,7 +8,7 @@ model = dict(
         depth=50,
         in_channels=3,
         out_indices=[4],  # 0: conv-1, x: stage-x
-        norm_cfg=dict(type="SyncBN"),
+        norm_cfg=dict(type="BN"),  # original: SyncBN
     ),
     neck=dict(
         type="NonLinearNeckSimCLR",  # SimCLR non-linear neck
