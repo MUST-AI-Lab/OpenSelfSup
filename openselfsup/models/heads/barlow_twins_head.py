@@ -20,10 +20,12 @@ class BarlowTwinsHead(nn.Module):
             Default: 0.0051.
     """
 
-    def __init__(self, lambd=0.0051, sizes=[2048]):
+    def __init__(self, lambd=0.0051, sizes=[2048], dimension='D'):
         super(BarlowTwinsHead, self).__init__()
         self.lambd = lambd
         self.bn = nn.BatchNorm1d(sizes[-1], affine=False)
+        assert dimension in ('D', 'N')
+        self.dimension = dimension
 
     def forward(self, z_a, z_b):
         """Forward head.
@@ -40,12 +42,20 @@ class BarlowTwinsHead(nn.Module):
         z_a_norm = (z_a - z_a.mean(0)) / z_a.std(0) # NxD
         z_b_norm = (z_b - z_b.mean(0)) / z_b.std(0) # NxD
 
-        # cross-correlation matrix
-        c = torch.mm(z_a_norm.T, z_b_norm) / N # DxD
-        # loss
-        c_diff = (c - torch.eye(D).cuda()).pow(2) # DxD
-        # multiply off-diagonal elems of c_diff by lambda
-        c_diff[~torch.eye(D, dtype=bool).cuda()] *= self.lambd
+        if self.dimension == 'D':
+            # cross-correlation matrix
+            c = torch.mm(z_a_norm.T, z_b_norm) / N # DxD
+            # loss
+            c_diff = (c - torch.eye(D).cuda()).pow(2) # DxD
+            # multiply off-diagonal elems of c_diff by lambda
+            c_diff[~torch.eye(D, dtype=bool).cuda()] *= self.lambd
+        elif self.dimension == 'N':
+            # auto-correlation matrix
+            c = torch.mm(z_a_norm, z_b_norm.T) / N # NxN
+            # loss
+            c_diff = (c - torch.eye(N).cuda()).pow(2) # NxN
+            # multiply off-diagonal elems of c_diff by lambda
+            c_diff[~torch.eye(N, dtype=bool).cuda()] *= self.lambd
         loss = c_diff.sum()
 
         # # empirical cross-correlation matrix
