@@ -38,34 +38,34 @@ class BarlowTwinsHead(nn.Module):
             dict[str, Tensor]: A dictionary of loss components.
         """
         N, D = z_a.shape
-        # normalize repr. along the batch dimension
-        z_a_norm = (z_a - z_a.mean(0)) / z_a.std(0) # NxD
-        z_b_norm = (z_b - z_b.mean(0)) / z_b.std(0) # NxD
 
-        if self.dimension == 'D':
-            # cross-correlation matrix
-            c = torch.mm(z_a_norm.T, z_b_norm) / N # DxD
-            # loss
-            c_diff = (c - torch.eye(D).cuda()).pow(2) # DxD
-            # multiply off-diagonal elems of c_diff by lambda
-            c_diff[~torch.eye(D, dtype=bool).cuda()] *= self.lambd
-        elif self.dimension == 'N':
-            # auto-correlation matrix
-            c = torch.mm(z_a_norm, z_b_norm.T) / N # NxN
-            # loss
-            c_diff = (c - torch.eye(N).cuda()).pow(2) # NxN
-            # multiply off-diagonal elems of c_diff by lambda
-            c_diff[~torch.eye(N, dtype=bool).cuda()] *= self.lambd
-        loss = c_diff.sum()
+        # # normalize repr. along the batch dimension
+        # z_a_norm = (z_a - z_a.mean(0)) / z_a.std(0) # NxD
+        # z_b_norm = (z_b - z_b.mean(0)) / z_b.std(0) # NxD
+        # if self.dimension == 'D':
+        #     # cross-correlation matrix
+        #     c = torch.mm(z_a_norm.T, z_b_norm) / N # DxD
+        #     # loss
+        #     c_diff = (c - torch.eye(D).cuda()).pow(2) # DxD
+        #     # multiply off-diagonal elems of c_diff by lambda
+        #     c_diff[~torch.eye(D, dtype=bool).cuda()] *= self.lambd
+        # elif self.dimension == 'N':
+        #     # auto-correlation matrix
+        #     c = torch.mm(z_a_norm, z_b_norm.T) / N # NxN
+        #     # loss
+        #     c_diff = (c - torch.eye(N).cuda()).pow(2) # NxN
+        #     # multiply off-diagonal elems of c_diff by lambda
+        #     c_diff[~torch.eye(N, dtype=bool).cuda()] *= self.lambd
+        # loss = c_diff.sum()
 
-        # # empirical cross-correlation matrix
-        # c = self.bn(z_a).T @ self.bn(z_b)
-        # # sum the cross-correlation matrix between all gpus
-        # c.div_(N)
-        # torch.distributed.all_reduce(c)
-        # on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
-        # off_diag = off_diagonal(c).pow_(2).sum()
-        # loss = on_diag + self.lambd * off_diag
+        # empirical cross-correlation matrix
+        c = self.bn(z_a).T @ self.bn(z_b)
+        # sum the cross-correlation matrix between all gpus
+        c.div_(N)
+        torch.distributed.all_reduce(c)
+        on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
+        off_diag = off_diagonal(c).pow_(2).sum()
+        loss = on_diag + self.lambd * off_diag
 
         losses = dict()
         losses['loss'] = loss
