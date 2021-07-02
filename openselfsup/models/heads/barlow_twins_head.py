@@ -20,11 +20,11 @@ class BarlowTwinsHead(nn.Module):
             Default: 0.0051.
     """
 
-    def __init__(self, lambd=0.0051, sizes=[2048], dimension='D'):
+    def __init__(self, lambd=0.0051, sizes=[2048], dimension="D"):
         super(BarlowTwinsHead, self).__init__()
         self.lambd = lambd
         self.bn = nn.BatchNorm1d(sizes[-1], affine=False)
-        assert dimension in ('D', 'N')
+        assert dimension in ("D", "N")
         self.dimension = dimension
 
     def forward(self, z_a, z_b):
@@ -68,5 +68,52 @@ class BarlowTwinsHead(nn.Module):
         loss = on_diag + self.lambd * off_diag
 
         losses = dict()
-        losses['loss'] = loss
+        losses["loss"] = loss
+        return losses
+
+
+@HEADS.register_module
+class BarlowTwinsHeadV2(nn.Module):
+    """Head for Barlow Twins.
+
+    Args:
+        lambd (float): Weight on off-diagonal terms.
+            Default: 0.0051.
+    """
+
+    def __init__(self, lambd=0.0051, dimension=2048):
+        super(BarlowTwinsHeadV2, self).__init__()
+        self.lambd = lambd
+        self.bn = nn.BatchNorm1d(dimension, affine=False)
+
+    def forward(self, z_a, z_b, gt_label):
+        """Forward head.
+
+        Args:
+            z_a (Tensor): NxD representation from one randomly augmented image.
+            z_b (Tensor): NxD representation from another version of augmentation.
+            gt_label (Tensor): Ground-truth labels.
+
+        Returns:
+            dict[str, Tensor]: A dictionary of loss components.
+        """
+        N, D = z_a.shape
+        # empirical cross-correlation matrix
+        c = self.bn(z_a).T @ self.bn(z_b)  # DxD
+        # sum the cross-correlation matrix between all gpus
+        c.div_(N)
+        torch.distributed.all_reduce(c)
+        on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
+        off_diag = off_diagonal(c).pow_(2).sum()
+        loss = on_diag + self.lambd * off_diag
+
+        c_ = self.bn(z_a) @ self.bn(z_b).T  # NxN
+        # TODO: try Frobenius norm or nuclear norm
+        # FIXME: torch.norm is deprecated and may be removed in a future PyTorch release.
+        rank = torch.norm(c_)
+        # hyper-param 0.01
+        loss -= 0.01 * rank
+
+        losses = dict()
+        losses["loss"] = loss
         return losses
