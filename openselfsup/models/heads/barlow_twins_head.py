@@ -81,10 +81,12 @@ class BarlowTwinsHeadV2(nn.Module):
             Default: 0.0051.
     """
 
-    def __init__(self, lambd=0.0051, dimension=2048):
+    def __init__(self, lambd=0.0051, dimension=2048, norm="fro", rank_lambd=1):
         super(BarlowTwinsHeadV2, self).__init__()
         self.lambd = lambd
         self.bn = nn.BatchNorm1d(dimension, affine=False)
+        self.norm = norm
+        self.rank_lambd = rank_lambd
 
     def forward(self, z_a, z_b, gt_label):
         """Forward head.
@@ -108,9 +110,8 @@ class BarlowTwinsHeadV2(nn.Module):
         loss = on_diag + self.lambd * off_diag
 
         c_ = self.bn(z_a) @ self.bn(z_b).T  # NxN
-        # TODO: try Frobenius norm or nuclear norm
         # FIXME: torch.norm is deprecated and may be removed in a future PyTorch release.
-        rank = torch.norm(c_)
+        rank = self.rank_lambd * torch.norm(c_, p=self.norm)
         # hyper-param 0.01
         loss -= 0.01 * rank
 
