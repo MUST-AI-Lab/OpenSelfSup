@@ -110,6 +110,8 @@ class BarlowTwinsHeadV2(nn.Module):
         loss = on_diag + self.lambd * off_diag
 
         c_ = self.bn(z_a) @ self.bn(z_b).T  # NxN
+        gt_label = torch.flatten(gt_label).view(-1, 1)
+        mask = torch.eq(gt_label, gt_label.T).float()
         # FIXME: torch.norm is deprecated and may be removed in a future PyTorch release.
         rank = self.rank_lambd * torch.norm(c_, p=self.norm)
         # hyper-param 0.01

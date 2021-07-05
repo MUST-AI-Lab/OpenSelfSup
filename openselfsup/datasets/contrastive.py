@@ -57,7 +57,9 @@ class ContrastiveDatasetV2(BaseDataset):
             img1 = torch.from_numpy(to_numpy(img1))
             img2 = torch.from_numpy(to_numpy(img2))
         img_cat = torch.cat((img1.unsqueeze(0), img2.unsqueeze(0)), dim=0)
-        return dict(img=img_cat, gt_label=target)
+        target = torch.tensor([target])
+        label_cat = torch.cat((target, target))
+        return dict(img=img_cat, gt_label=label_cat)
 
     def evaluate(self, scores, keyword, logger=None, **kwargs):
         raise NotImplemented
