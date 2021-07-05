@@ -65,7 +65,6 @@ optimizer = dict(
     type="Adam",  # try to use Adam
     lr=0.1,  # new_lr = old_lr * new_ngpus / 8
     weight_decay=1e-6,
-    momentum=0.9,
     paramwise_options={
         r"(bn|gn)(\d+)?.(weight|bias)": dict(weight_decay=0.0, lars_exclude=True),
         "bias": dict(weight_decay=0.0, lars_exclude=True),
