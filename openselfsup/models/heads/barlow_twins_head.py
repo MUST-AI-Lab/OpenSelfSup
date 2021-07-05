@@ -81,12 +81,13 @@ class BarlowTwinsHeadV2(nn.Module):
             Default: 0.0051.
     """
 
-    def __init__(self, lambd=0.0051, dimension=2048, norm="fro", rank_lambd=1):
+    def __init__(self, lambd=0.0051, dimension=2048, norm="fro", rank_lambd=1, supcon=False):
         super(BarlowTwinsHeadV2, self).__init__()
         self.lambd = lambd
         self.bn = nn.BatchNorm1d(dimension, affine=False)
         self.norm = norm
         self.rank_lambd = rank_lambd
+        self.supcon = supcon
 
     def forward(self, z_a, z_b, gt_label):
         """Forward head.
@@ -110,12 +111,14 @@ class BarlowTwinsHeadV2(nn.Module):
         loss = on_diag + self.lambd * off_diag
 
         c_ = self.bn(z_a) @ self.bn(z_b).T  # NxN
-        gt_label = torch.flatten(gt_label).view(-1, 1)
-        mask = torch.eq(gt_label, gt_label.T).float()
         # FIXME: torch.norm is deprecated and may be removed in a future PyTorch release.
         rank = self.rank_lambd * torch.norm(c_, p=self.norm)
-        # hyper-param 0.01
-        loss -= 0.01 * rank
+        loss -= rank
+
+        if self.supcon:
+            gt_label = torch.flatten(gt_label).view(-1, 1)
+            mask = torch.eq(gt_label, gt_label.T).float()
+            # TODO: label mask
 
         losses = dict()
         losses["loss"] = loss
