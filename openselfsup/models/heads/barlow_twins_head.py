@@ -81,7 +81,9 @@ class BarlowTwinsHeadV2(nn.Module):
             Default: 0.0051.
     """
 
-    def __init__(self, lambd=0.0051, dimension=2048, norm="fro", rank_lambd=1, supcon=False):
+    def __init__(
+        self, lambd=0.0051, dimension=2048, norm="fro", rank_lambd=1, supcon=False
+    ):
         super(BarlowTwinsHeadV2, self).__init__()
         self.lambd = lambd
         self.bn = nn.BatchNorm1d(dimension, affine=False)
@@ -122,4 +124,54 @@ class BarlowTwinsHeadV2(nn.Module):
 
         losses = dict()
         losses["loss"] = loss
+        return losses
+
+
+@HEADS.register_module
+class BtSimClrHead(nn.Module):
+    """Head for Barlow Twins with SimCLR.
+
+    Args:
+        lambd (float): Weight on off-diagonal terms.
+            Default: 0.0051.
+    """
+
+    def __init__(self, lambd=0.0051, dimension=2048, temperature=0.1):
+        super(BtSimClrHead, self).__init__()
+        self.lambd = lambd
+        self.bn = nn.BatchNorm1d(dimension, affine=False)
+        self.criterion = nn.CrossEntropyLoss()
+        self.temperature = temperature
+
+    def forward(self, z_a, z_b, pos, neg):
+        """Forward head.
+
+        Args:
+            z_a (Tensor): NxD representation from one randomly augmented image.
+            z_b (Tensor): NxD representation from another version of augmentation.
+            pos (Tensor): Nx1 positive similarity.
+            neg (Tensor): Nxk negative similarity.
+
+        Returns:
+            dict[str, Tensor]: A dictionary of loss components.
+        """
+        N, D = z_a.shape
+
+        # empirical cross-correlation matrix
+        c = self.bn(z_a).T @ self.bn(z_b)
+        # sum the cross-correlation matrix between all gpus
+        c.div_(N)
+        torch.distributed.all_reduce(c)
+        on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
+        off_diag = off_diagonal(c).pow_(2).sum()
+        bt_loss = on_diag + self.lambd * off_diag
+
+        N = pos.size(0)
+        logits = torch.cat((pos, neg), dim=1)
+        logits /= self.temperature
+        labels = torch.zeros((N, ), dtype=torch.long).cuda()
+        simclr_loss = self.criterion(logits, labels)
+
+        losses = dict()
+        losses["loss"] = bt_loss + simclr_loss
         return losses
