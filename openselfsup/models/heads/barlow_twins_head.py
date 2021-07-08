@@ -136,12 +136,13 @@ class BtSimClrHead(nn.Module):
             Default: 0.0051.
     """
 
-    def __init__(self, lambd=0.0051, dimension=2048, temperature=0.1):
+    def __init__(self, lambd=0.0051, dimension=2048, temperature=0.1, bt_coe=1):
         super(BtSimClrHead, self).__init__()
         self.lambd = lambd
         self.bn = nn.BatchNorm1d(dimension, affine=False)
         self.criterion = nn.CrossEntropyLoss()
         self.temperature = temperature
+        self.bt_coe = bt_coe
 
     def forward(self, z_a, z_b, pos, neg):
         """Forward head.
@@ -173,5 +174,5 @@ class BtSimClrHead(nn.Module):
         simclr_loss = self.criterion(logits, labels)
 
         losses = dict()
-        losses["loss"] = bt_loss + simclr_loss
+        losses["loss"] = self.bt_coe * bt_loss + simclr_loss
         return losses
