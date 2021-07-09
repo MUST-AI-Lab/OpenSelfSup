@@ -18,7 +18,7 @@ model = dict(
         num_layers=2,
         with_avg_pool=True,
     ),
-    head=dict(type="BtSimClrHead"),
+    head=dict(type="BtSimClrHead", dimension=128),
 )
 # dataset settings
 data_source_cfg = dict(type="Cifar10", root="data")
