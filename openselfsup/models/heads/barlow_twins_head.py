@@ -82,14 +82,13 @@ class BarlowTwinsHeadV2(nn.Module):
     """
 
     def __init__(
-        self, lambd=0.0051, dimension=2048, norm="fro", rank_lambd=1, supcon=False
+        self, lambd=0.0051, dimension=2048, norm="fro", rank_lambd=1
     ):
         super(BarlowTwinsHeadV2, self).__init__()
         self.lambd = lambd
         self.bn = nn.BatchNorm1d(dimension, affine=False)
         self.norm = norm
         self.rank_lambd = rank_lambd
-        self.supcon = supcon
 
     def forward(self, z_a, z_b, gt_label):
         """Forward head.
@@ -117,10 +116,53 @@ class BarlowTwinsHeadV2(nn.Module):
         rank = self.rank_lambd * torch.norm(c_, p=self.norm)
         loss -= rank
 
-        if self.supcon:
-            gt_label = torch.flatten(gt_label).view(-1, 1)
-            mask = torch.eq(gt_label, gt_label.T).float()
-            # TODO: label mask
+        losses = dict()
+        losses["loss"] = loss
+        return losses
+
+
+@HEADS.register_module
+class BarlowTwinsHeadV3(nn.Module):
+    """Head for Barlow Twins.
+
+    Args:
+        lambd (float): Weight on off-diagonal terms.
+            Default: 0.0051.
+    """
+
+    def __init__(
+        self, lambd=0.0051, dimension=2048, alpha=0.1
+    ):
+        super(BarlowTwinsHeadV3, self).__init__()
+        self.lambd = lambd
+        self.bn = nn.BatchNorm1d(dimension, affine=False)
+        self.alpha = alpha
+
+    def forward(self, z_a, z_b, gt_label):
+        """Forward head.
+
+        Args:
+            z_a (Tensor): NxD representation from one randomly augmented image.
+            z_b (Tensor): NxD representation from another version of augmentation.
+            gt_label (Tensor): Ground-truth labels.
+
+        Returns:
+            dict[str, Tensor]: A dictionary of loss components.
+        """
+        N, D = z_a.shape
+        # empirical cross-correlation matrix
+        c = self.bn(z_a).T @ self.bn(z_b)  # DxD
+        # sum the cross-correlation matrix between all gpus
+        c.div_(N)
+        torch.distributed.all_reduce(c)
+        on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
+        off_diag = off_diagonal(c).pow_(2).sum()
+        loss = on_diag + self.lambd * off_diag
+
+        c_ = self.bn(z_a) @ self.bn(z_b).T  # NxN
+        gt_label = torch.flatten(gt_label).view(-1, 1)
+        mask = torch.eq(gt_label, gt_label.T).float()
+        loss -= self.alpha * (c_ - mask).sum()
 
         losses = dict()
         losses["loss"] = loss
@@ -170,7 +212,7 @@ class BtSimClrHead(nn.Module):
         N = pos.size(0)
         logits = torch.cat((pos, neg), dim=1)
         logits /= self.temperature
-        labels = torch.zeros((N, ), dtype=torch.long).cuda()
+        labels = torch.zeros((N,), dtype=torch.long).cuda()
         simclr_loss = self.criterion(logits, labels)
 
         losses = dict()
