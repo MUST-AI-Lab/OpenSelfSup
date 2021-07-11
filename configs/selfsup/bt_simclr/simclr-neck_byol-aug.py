@@ -1,7 +1,7 @@
 _base_ = "../../base.py"
 # model settings
 model = dict(
-    type="BarlowTwins",
+    type="BtSimClr",
     pretrained=None,
     backbone=dict(
         type="ResNet",
