@@ -20,12 +20,10 @@ class BarlowTwinsHead(nn.Module):
             Default: 0.0051.
     """
 
-    def __init__(self, lambd=0.0051, sizes=[2048], dimension="D"):
+    def __init__(self, lambd=0.0051, dimension=2048):
         super(BarlowTwinsHead, self).__init__()
         self.lambd = lambd
-        self.bn = nn.BatchNorm1d(sizes[-1], affine=False)
-        assert dimension in ("D", "N")
-        self.dimension = dimension
+        self.bn = nn.BatchNorm1d(dimension, affine=False)
 
     def forward(self, z_a, z_b):
         """Forward head.
