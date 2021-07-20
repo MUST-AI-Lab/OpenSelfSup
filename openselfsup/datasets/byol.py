@@ -27,7 +27,7 @@ class BYOLDataset(Dataset):
         return self.data_source.get_length()
 
     def __getitem__(self, idx):
-        img = self.data_source.get_sample(idx)
+        img = self.data_source.get_sample(idx)[0]
         img1 = self.pipeline1(img)
         img2 = self.pipeline2(img)
         if self.prefetch:

@@ -1,4 +1,4 @@
-_base_ = '../../base.py'
+_base_ = '../../../base.py'
 # model settings
 model = dict(
     type='Classification',
@@ -56,4 +56,4 @@ optimizer = dict(type='SGD', lr=0.1, momentum=0.9, weight_decay=0.0005)
 lr_config = dict(policy='step', step=[150, 250])
 checkpoint_config = dict(interval=50)
 # runtime settings
-total_epochs = 350
+total_epochs = 300 # from 350 to save time

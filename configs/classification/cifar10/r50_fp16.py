@@ -57,3 +57,6 @@ lr_config = dict(policy='step', step=[150, 250])
 checkpoint_config = dict(interval=50)
 # runtime settings
 total_epochs = 350
+# apex
+use_fp16 = True
+optimizer_config = dict(use_fp16=use_fp16)

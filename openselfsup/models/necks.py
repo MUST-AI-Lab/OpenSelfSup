@@ -351,3 +351,37 @@ class AvgPoolNeck(nn.Module):
     def forward(self, x):
         assert len(x) == 1
         return [self.avg_pool(x[0])]
+
+
+@NECKS.register_module
+class BarlowTwinsNeck(nn.Module):
+    """The non-linear neck in Barlow Twins: fc-bn-relu-fc-bn-relu-fc
+    """
+
+    def __init__(self,
+                 in_channels,
+                 hid_channels,
+                 out_channels,
+                 with_avg_pool=True):
+        super(BarlowTwinsNeck, self).__init__()
+        self.with_avg_pool = with_avg_pool
+        if with_avg_pool:
+            self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.mlp = nn.Sequential(
+            nn.Linear(in_channels, hid_channels, bias=False),
+            nn.BatchNorm1d(hid_channels),
+            nn.ReLU(inplace=True),
+            nn.Linear(hid_channels, hid_channels, bias=False),
+            nn.BatchNorm1d(hid_channels),
+            nn.ReLU(inplace=True),
+            nn.Linear(hid_channels, out_channels, bias=False))
+
+    def init_weights(self, init_linear='normal'):
+        _init_weights(self, init_linear)
+
+    def forward(self, x):
+        assert len(x) == 1, "Got: {}".format(len(x))
+        x = x[0]
+        if self.with_avg_pool:
+            x = self.avgpool(x)
+        return [self.mlp(x.view(x.size(0), -1))]
